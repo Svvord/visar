@@ -45,6 +45,7 @@ def calculate_gradients_ST(X_train, prev_model):
 def calculate_gradients_baseline(train_dataset, model_type):
     '''
     return the coefients of baseline model after training
+    Notice the input dataset must be training dataset!
     '''
     X_new = np.c_[[1]*train_dataset.X.shape[0], train_dataset.X]
     if model_type == 'SVR':

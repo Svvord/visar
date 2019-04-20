@@ -1,30 +1,40 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
-#############################################
-# File Name: setup.py
-# Author: S. Hou
-# Mail: housy17@mails.tsinghua.edu.cn
-# Created Time:  2019\04\14 22:30
-#############################################
-
+with open("README.md", "r") as f:
+    long_description = f.read()
 
 from setuptools import setup, find_packages
 
 setup(
     name = "visar",
-    version = "0.1.3",
-    keywords = ("pip", "pathtool","timetool", "magetool", "mage"),
-    description = "xxx",
-    long_description = "xxx",
+    version = "0.1.3.2",
+    keywords = ("Chemoinformatics", "neural network", "visualized structure-activity relationship", "chemical landscape"),
+    description = "This project aims to train neural networks by compound-protein interactions and provides interpretation of the learned model by interactively showing transformed chemical landscape and visualized SAR for chemicals of interest.",
+    long_description = long_description,
+    long_description_content_type='text/markdown',
     license = "MIT Licence",
 
-    url = "https://github.com/Svvord/xxx",
-    author = "S. Hou",
-    author_email = "housy17@mails.tsinghua.edu.cn",
+    url = "https://github.com/Svvord/visar",
+    author = "Qingyang Ding",
+    author_email = "dingqy14@mails.tsinghua.edu.cn",
+    maintainer = "S. Hou",
+    maintainer_email = "housy17@mails.tsinghua.edu.cn",
 
     packages = find_packages(),
     include_package_data = True,
     platforms = "any",
-    install_requires = []
+    install_requires = [
+        "numpy",
+        "scipy",
+        "sklearn",
+        "pandas",
+        "tensorflow",
+        "kears",
+        "align-it",
+        "deepchem",
+        "rdkit",
+        "cairosvg",
+        "bokeh",
+        ]
 )

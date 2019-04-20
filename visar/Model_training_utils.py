@@ -58,7 +58,7 @@ def optimize_RidgeCV(X_train, Y_train):
 #---------------------------------------------
 def prepare_dataset(fname, task, dataset_file, FP_type, 
                     model_flag = 'ST', add_features = None,
-                    smiles_filed = 'salt_removed_smi', id_field = 'molregno'):
+                    smiles_field = 'salt_removed_smi', id_field = 'molregno'):
     '''
     input: fname --- name of the file of raw data containing chemicals and the value for each assay;
            task --- list of task names (supporting 1 or more, but must be a list)
@@ -72,9 +72,9 @@ def prepare_dataset(fname, task, dataset_file, FP_type,
     '''
     MT_df = pd.read_csv(fname)
     if model_flag == 'ST':
-        df = extract_clean_dataset(task, MT_df)
+        df = extract_clean_dataset(task, MT_df, smiles_field = smiles_field, id_field = id_field)
     elif model_flag == 'MT':
-        df = extract_clean_dataset(task, MT_df, add_features = ['MW','logP','TPSA','BertzCT'])
+        df = extract_clean_dataset(task, MT_df, add_features = ['MW','logP','TPSA','BertzCT'], smiles_field = smiles_field, id_field = id_field)
         task = task + add_features
     
     if FP_type == 'Circular_2048':
@@ -147,7 +147,7 @@ def prepare_dataset(fname, task, dataset_file, FP_type,
     else:
         print('Unsupported Fingerprint type!')
     
-    return dataset
+    return dataset, df
 #----------------------------------------------
 def extract_clean_dataset(subset_names, MT_df, add_features = None, id_field = 'molregno', smiles_field = 'salt_removed_smi'):
     '''

@@ -25,6 +25,13 @@ import pandas as pd
 
 from rdkit import Chem
 from rdkit.Chem import PandasTools
+import cairosvg
+
+from bokeh.plotting import figure, output_notebook, show
+from bokeh.models import ColumnDataSource
+
+from Model_SAR_viz_utils import calculate_gradients_ST, moltosvg, color_rendering, gradient2atom
+from Model_training_utils import prepare_dataset, extract_clean_dataset
 
 #------------------------------------------------
 # functions for transfer value calculating (layer1/2/3/4)
@@ -235,3 +242,190 @@ def generate_sdf(df, id_var, fname_right, on_var_right, smi_var_right,
     PandasTools.AddMoleculeColumnToFrame(new_df,'smi','ROMol')
     PandasTools.WriteSDF(new_df, output_sdf_name, idName='id', properties=df.columns)
     return new_df
+
+#------------------------------------------------
+def sdf2df(sdf_file):
+    '''
+    convert sdf file to the type of pd.DataFrame
+    '''
+    suppl = Chem.SDMolSupplier(sdf_file)
+    mols = [mol for mol in suppl]
+    mol_names = [mol.GetProp('_Name') for mol in mols]
+    df = pd.DataFrame({'molregno': mol_names})
+
+    props = list(mols[0].GetPropsAsDict().keys())
+    for prop in props:
+        values = [mol.GetProp(prop) for mol in mols]
+        df[prop] = values
+    return df
+
+def df2sdf(df, output_sdf_name, smiles_field, id_field, custom_filter = None):
+    '''
+    pack pd.DataFrame to sdf_file
+    '''
+    if custom_filter:
+        df = df.loc[custom_filter]
+    PandasTools.AddMoleculeColumnToFrame(df,smiles_field,'ROMol')
+    PandasTools.WriteSDF(df, output_sdf_name, idName=id_field, properties=df.columns)
+
+    return
+
+def SAR_rendering(X, prev_model, df, id_field, smiles_field, SAR_result_dir, vis_cutoff = 50):
+    gradients = calculate_gradients_ST(X, prev_model)
+    for k in range(len(df)):
+        gradient0 = gradients[k, :]
+        smi = df[smiles_field].iloc[k]
+        mol, highlit_pos, highlit_neg, atomsToUse = gradient2atom(smi, gradient0)
+        atomsToUse, color_dict = color_rendering(atomsToUse, vis_cutoff)
+        img = moltosvg(mol, molSize=(450,300), highlightAtoms=[m for m in range(len(atomsToUse))],
+            highlightAtomColors = color_dict,highlightBonds=[])
+        cairosvg.svg2png(bytestring=img.data, write_to = SAR_result_dir + '%s_img.png' % str(df[id_field].iloc[k]))
+    png_file_names = [SAR_result_dir + str(item) + '_img.png' for item in df[id_field].tolist()]
+    df['imgs'] = png_file_names
+    return df
+
+def interactive_plot(plot_df, x_column, y_column, color_column, id_field, value_field, label_field):
+    # color rendering
+    from bokeh.palettes import RdBu11
+    COLORS = RdBu11
+    N_COLORS = len(COLORS)
+    groups = pd.qcut(plot_df[color_column].tolist(), N_COLORS, duplicates='drop')
+    c = [COLORS[xx] for xx in groups.codes]
+    plot_df['c'] = c
+
+    # prepare bokeh dataset
+    cds_df = ColumnDataSource(plot_df)
+
+    # set hover display format
+    TOOLTIPS = """
+        <div>
+            <div>
+                <img
+                    src="@imgs" height="300" alt="@imgs" width="240"
+                    style="float: left; margin: 0px 15px 15px 0px;"
+                    border="2"
+                ></img>
+            </div>
+            <div>
+                <span style="font-size: 17px; font-weight: bold;">@%s</span>
+                <span style="font-size: 15px; color: #966;">[$index]</span>
+            </div>
+            <div>
+                <span style="font-size: 10px;">Activity:</span>
+                <span>@%s</span>
+            </div>
+            <div>
+                <span style="font-size: 10px;">Cluster label:</span>
+                <span>@%s</span>
+            </div>
+            <div>
+                <span style="font-size: 15px;">Location</span>
+                <span style="font-size: 10px; color: #696;">($x, $y)</span>
+            </div>
+        </div>
+    """ % (id_field, value_field, label_field)
+    p = figure(plot_width = 800, plot_height = 800, toolbar_location = 'below',
+               tools = 'pan,box_zoom,reset,lasso_select,save,hover', tooltips=TOOLTIPS)
+    p.circle(source = cds_df, x = x_column, y = y_column, color='c', size=9)
+    return p
+
+#================================================
+def landscape_building(task_name, db_name, log_path, FP_type,
+                       prev_model, n_layer, 
+                       SAR_result_dir, output_sdf_name,
+                       interactive_plot = True, pack_sdf = True, vis_cutoff = 50,
+                       smiles_field = 'salt_removed_smi', id_field = 'molregno'):
+    '''
+    generate chemical landscape for a specific task
+    '''
+    # step1: prepare dataset for the landscape
+    print('==== preparing dataset ... ====')
+    dataset_file = '%s/temp.csv' % (log_path)
+    dataset, df = prepare_dataset(db_name, [task_name], dataset_file, FP_type)
+
+    # step2: calculate transfer value
+    print('==== calculating transfer values ... ====')
+    transfer_model = calculate_transfer_values(prev_model, n_layer)
+    value_reduced = dim_reduce(transfer_model, dataset.X)
+    df['coord1'] = value_reduced[:,0]
+    df['coord2'] = value_reduced[:,1]
+
+    # step3: MiniBatch clustering
+    mbk = cluster_MiniBatch(value_reduced)
+    df['Label'] = mbk.labels_
+
+    # step4: SAR rendering for all compounds
+    print('==== rendering SAR for chemicals on the landscape ... ====')
+    df = SAR_rendering(dataset.X, prev_model, df, id_field, smiles_field, SAR_result_dir, vis_cutoff)
+
+    # step5: pack sdf
+    if pack_sdf:
+        print('==== packing sdf file ... ====')
+        df2sdf(df, output_sdf_name, smiles_field, id_field)
+
+    # step6: build interactive plot using Bokeh
+    plot_df = df.drop(['ROMol'], axis = 1)
+    if interactive_plot:
+        print('==== generate interactive plot ... ====')
+        p = interactive_plot(plot_df, 'coord1', 'coord2', task_name,
+                             id_field, task_name, 'Label')
+        show(p)
+    return
+
+
+def landscape_positioning(custom_file, custom_smi_field, custom_id_field, custom_task_field,
+                          task_name, db_name, FP_type, log_path,
+                          prev_model, n_layer, custom_SAR_result_dir, custom_sdf_name,
+                          interactive_plot = True, pack_sdf = True, vis_cutoff = 50,
+                          smiles_field = 'salt_removed_smi', id_field = 'molregno'):
+    # step1: prepare dataset for the landscape
+    print('==== preparing dataset ... ====')
+    dataset_file = '%s/temp.csv' % (log_path)
+    dataset, df = prepare_dataset(db_name, [task_name], dataset_file, FP_type)
+
+    custom_dataset, custom_df = prepare_dataset(custom_file, [custom_task_field], custom_file, FP_type, 
+                            smiles_field = custom_smi_field, id_field = custom_id_field)
+
+    # step2: calculate transfer value
+    print('==== calculating transfer values ... ====')
+    transfer_model = calculate_transfer_values(prev_model, n_layer)
+    X_new = np.concatenate([custom_dataset.X, dataset.X])
+    value_reduced = dim_reduce(transfer_model, X_new)
+    
+    custom_df['coord1'] = value_reduced[0:len(custom_df),0]
+    custom_df['coord2'] = value_reduced[0:len(custom_df),1]
+    df['coord1'] = value_reduced[len(custom_df):value_reduced.shape[0],0]
+    df['coord2'] = value_reduced[len(custom_df):value_reduced.shape[0]:,1]
+
+    # step3: MiniBatch clustering
+    mbk = cluster_MiniBatch(value_reduced)
+    custom_df['Label'] = mbk.labels_[0:len(custom_df)]
+    df['Label'] = mbk.labels_[len(custom_df):value_reduced.shape[0]]
+
+    # step4: SAR rendering for all compounds
+    print('==== rendering SAR for chemicals on the landscape ... ====')
+    custom_df = SAR_rendering(custom_dataset.X, prev_model, custom_df, custom_id_field, custom_smi_field, 
+                              custom_SAR_result_dir, vis_cutoff)
+
+    # step5: pack sdf
+    if pack_sdf:
+        print('==== packing sdf file ... ====')
+        plot_df = pd.DataFrame({'coord1': value_reduced[:,1], 'coord2': value_reduced[:,1]})
+        plot_df[id_field] = custom_df[custom_id_field].tolist() + df[id_field].tolist()
+        plot_df[task_name] = custom_df[custom_task_field].tolist() + df[task_name].tolist()
+        plot_df['Label'] = mbk.labels_
+        plot_df[smi_field] = custom_df[custom_smi_field].tolist() + df[smiles_field].tolist()
+        df2sdf(plot_df, custom_sdf_name, smi_field, id_field)
+
+    # step6: build interactive plot using Bokeh
+    plot_df = plot_df.drop(['ROMol'], axis = 1)
+    if interactive_plot:
+        print('==== generate interactive plot ... ====')
+        plot_df['group'] = [1] * len(custom_df) + [0] * len(df)
+        p = interactive_plot(plot_df, 'coord1', 'coord2', 'group',
+                             id_field, task_name, 'Label')
+        show(p)
+    return custom_df
+
+
+
