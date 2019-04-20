@@ -333,7 +333,7 @@ def interactive_plot(plot_df, x_column, y_column, color_column, id_field, value_
 def landscape_building(task_name, db_name, log_path, FP_type,
                        prev_model, n_layer, 
                        SAR_result_dir, output_sdf_name,
-                       interactive_plot = True, pack_sdf = True, vis_cutoff = 50,
+                       pack_sdf = True, vis_cutoff = 50,
                        smiles_field = 'salt_removed_smi', id_field = 'molregno'):
     '''
     generate chemical landscape for a specific task
@@ -341,7 +341,8 @@ def landscape_building(task_name, db_name, log_path, FP_type,
     # step1: prepare dataset for the landscape
     print('==== preparing dataset ... ====')
     dataset_file = '%s/temp.csv' % (log_path)
-    dataset, df = prepare_dataset(db_name, [task_name], dataset_file, FP_type)
+    dataset, df = prepare_dataset(db_name, [task_name], dataset_file, FP_type,
+                                  smiles_field = smiles_field, id_field = id_field)
 
     # step2: calculate transfer value
     print('==== calculating transfer values ... ====')
@@ -365,26 +366,26 @@ def landscape_building(task_name, db_name, log_path, FP_type,
 
     # step6: build interactive plot using Bokeh
     plot_df = df.drop(['ROMol'], axis = 1)
-    if interactive_plot:
-        print('==== generate interactive plot ... ====')
-        p = interactive_plot(plot_df, 'coord1', 'coord2', task_name,
-                             id_field, task_name, 'Label')
-        show(p)
-    return
+    return plot_df
 
 
 def landscape_positioning(custom_file, custom_smi_field, custom_id_field, custom_task_field,
-                          task_name, db_name, FP_type, log_path,
+                          landscape_sdf, task_name, db_name, FP_type, log_path,
                           prev_model, n_layer, custom_SAR_result_dir, custom_sdf_name,
-                          interactive_plot = True, pack_sdf = True, vis_cutoff = 50,
+                          pack_sdf = True, vis_cutoff = 50,
                           smiles_field = 'salt_removed_smi', id_field = 'molregno'):
     # step1: prepare dataset for the landscape
     print('==== preparing dataset ... ====')
-    dataset_file = '%s/temp.csv' % (log_path)
-    dataset, df = prepare_dataset(db_name, [task_name], dataset_file, FP_type)
+    df = sdf2df(landscape_sdf)
+    df_imgs = pd.DataFrame({'molregno': [int(item) for item in df['molregno'].tolist()], 'imgs': df['imgs'].tolist()})
 
-    custom_dataset, custom_df = prepare_dataset(custom_file, [custom_task_field], custom_file, FP_type, 
-                            smiles_field = custom_smi_field, id_field = custom_id_field)
+    dataset_file = '%s/temp.csv' % (log_path)
+    dataset, df = prepare_dataset(db_name, [task_name], dataset_file, FP_type,
+                                  smiles_field = smiles_field, id_field = id_field)
+    df = pd.merge(df, df_imgs, right_on = 'molregno', left_on = id_field)
+
+    custom_dataset, custom_df = prepare_dataset(custom_file, [custom_task_field], custom_file, FP_type,
+                                                smiles_field = custom_smi_field, id_field = custom_id_field)
 
     # step2: calculate transfer value
     print('==== calculating transfer values ... ====')
@@ -395,7 +396,7 @@ def landscape_positioning(custom_file, custom_smi_field, custom_id_field, custom
     custom_df['coord1'] = value_reduced[0:len(custom_df),0]
     custom_df['coord2'] = value_reduced[0:len(custom_df),1]
     df['coord1'] = value_reduced[len(custom_df):value_reduced.shape[0],0]
-    df['coord2'] = value_reduced[len(custom_df):value_reduced.shape[0]:,1]
+    df['coord2'] = value_reduced[len(custom_df):value_reduced.shape[0],1]
 
     # step3: MiniBatch clustering
     mbk = cluster_MiniBatch(value_reduced)
@@ -410,22 +411,18 @@ def landscape_positioning(custom_file, custom_smi_field, custom_id_field, custom
     # step5: pack sdf
     if pack_sdf:
         print('==== packing sdf file ... ====')
-        plot_df = pd.DataFrame({'coord1': value_reduced[:,1], 'coord2': value_reduced[:,1]})
+        plot_df = pd.DataFrame({'coord1': value_reduced[:,0], 'coord2': value_reduced[:,1]})
         plot_df[id_field] = custom_df[custom_id_field].tolist() + df[id_field].tolist()
         plot_df[task_name] = custom_df[custom_task_field].tolist() + df[task_name].tolist()
         plot_df['Label'] = mbk.labels_
-        plot_df[smi_field] = custom_df[custom_smi_field].tolist() + df[smiles_field].tolist()
-        df2sdf(plot_df, custom_sdf_name, smi_field, id_field)
+        plot_df[smiles_field] = custom_df[custom_smi_field].tolist() + df[smiles_field].tolist()
+        plot_df['imgs'] = custom_df['imgs'].tolist() + df['imgs'].tolist()
+        df2sdf(plot_df, custom_sdf_name, smiles_field, id_field)
 
     # step6: build interactive plot using Bokeh
     plot_df = plot_df.drop(['ROMol'], axis = 1)
-    if interactive_plot:
-        print('==== generate interactive plot ... ====')
-        plot_df['group'] = [1] * len(custom_df) + [0] * len(df)
-        p = interactive_plot(plot_df, 'coord1', 'coord2', 'group',
-                             id_field, task_name, 'Label')
-        show(p)
-    return custom_df
+    plot_df['group'] = [1] * len(custom_df) + [0] * len(df)
+    return plot_df
 
 
 

@@ -1,0 +1,3 @@
+,dummy,molname,smiles
+0,0.0,RIT,CC1=C(CCN2CCC(=C(c3ccc(F)cc3)c4ccc(F)cc4)CC2)C(=O)N5C=CSC5=N1
+1,0.0,ERG,CN1C[C@@H](C=C2[C@H]1Cc3c[nH]c4cccc2c34)C(=O)N[C@]5(C)O[C@@]6(O)[C@@H]7CCCN7C(=O)[C@H](Cc8ccccc8)N6C5=O
