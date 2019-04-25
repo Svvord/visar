@@ -1,11 +1,8 @@
 numpy
 scipy
-sklearn
+scikit-learn
 pandas
-tensorflow
-kears
-align-it
+keras
 deepchem
-rdkit
 cairosvg
 bokeh

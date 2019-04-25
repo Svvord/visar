@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = "visar",
-    version = "0.1.5",
+    version = "0.1.5.2",
     keywords = ("Chemoinformatics", "neural network", "visualized structure-activity relationship", "chemical landscape"),
     description = "This project aims to train neural networks by compound-protein interactions and provides interpretation of the learned model by interactively showing transformed chemical landscape and visualized SAR for chemicals of interest.",
     long_description = long_description,
@@ -27,13 +27,10 @@ setup(
     install_requires = [
         "numpy",
         "scipy",
-        "sklearn",
+        "scikit-learn",
         "pandas",
-        "tensorflow",
-        "kears",
-        "align-it",
+        "keras",
         "deepchem",
-        "rdkit",
         "cairosvg",
         "bokeh",
         ]
