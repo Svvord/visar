@@ -9,6 +9,8 @@ from keras.layers import Dense, Input
 from keras.models import Model
 from keras.optimizers import Adam
 from keras.models import load_model
+import tensorflow as tf
+from keras import backend as K
 
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
@@ -272,6 +274,7 @@ def df2sdf(df, output_sdf_name, smiles_field, id_field, custom_filter = None):
 
 def SAR_rendering(X, prev_model, df, id_field, smiles_field, SAR_result_dir, vis_cutoff = 50):
     gradients = calculate_gradients_ST(X, prev_model)
+
     for k in range(len(df)):
         gradient0 = gradients[k, :]
         smi = df[smiles_field].iloc[k]
@@ -284,13 +287,43 @@ def SAR_rendering(X, prev_model, df, id_field, smiles_field, SAR_result_dir, vis
     df['imgs'] = png_file_names
     return df
 
-def interactive_plot(plot_df, x_column, y_column, color_column, id_field, value_field, label_field):
+def circle_plot(plot_df,  x_column, y_column, color_column):
     # color rendering
     from bokeh.palettes import RdBu11
     COLORS = RdBu11
     N_COLORS = len(COLORS)
     groups = pd.qcut(plot_df[color_column].tolist(), N_COLORS, duplicates='drop')
     c = [COLORS[xx] for xx in groups.codes]
+    plot_df['c'] = c
+
+    # prepare bokeh dataset
+    cds_df = ColumnDataSource(plot_df)
+
+    p = figure(plot_width = 800, plot_height = 800)
+    p.circle(source = cds_df, x = x_column, y = y_column, color='c', size=9)
+    return p
+
+def model_predict(X, prev_model):
+    model = load_model(prev_model)
+    pred_y = np.array(model.predict(X))
+    return pred_y
+
+def interactive_plot(plot_df, x_column, y_column, color_column, 
+                     id_field, value_field, label_field, pred_field, size = 9):
+    # color rendering
+    from bokeh.palettes import RdBu11, Set2_6
+    if len(set(plot_df[color_column].tolist())) <= 12:
+        COLORS = Set2_6
+        all_value = list(set(plot_df[color_column].tolist()))
+        map_dict = {}
+        for m in range(len(all_value)):
+            map_dict[all_value[m]] = m
+        c = [COLORS[map_dict[xx]] for xx in plot_df[color_column].tolist()]
+    else:
+        COLORS = RdBu11
+        N_COLORS = len(COLORS)
+        groups = pd.qcut(plot_df[color_column].tolist(), N_COLORS, duplicates='drop')
+        c = [COLORS[xx] for xx in groups.codes]
     plot_df['c'] = c
 
     # prepare bokeh dataset
@@ -315,6 +348,10 @@ def interactive_plot(plot_df, x_column, y_column, color_column, id_field, value_
                 <span>@%s</span>
             </div>
             <div>
+                <span style="font-size: 10px;">Predicted Activity:</span>
+                <span>@%s</span>
+            </div>
+            <div>
                 <span style="font-size: 10px;">Cluster label:</span>
                 <span>@%s</span>
             </div>
@@ -323,17 +360,17 @@ def interactive_plot(plot_df, x_column, y_column, color_column, id_field, value_
                 <span style="font-size: 10px; color: #696;">($x, $y)</span>
             </div>
         </div>
-    """ % (id_field, value_field, label_field)
+    """ % (id_field, value_field, pred_field, label_field)
     p = figure(plot_width = 800, plot_height = 800, toolbar_location = 'below',
                tools = 'pan,box_zoom,reset,lasso_select,save,hover', tooltips=TOOLTIPS)
-    p.circle(source = cds_df, x = x_column, y = y_column, color='c', size=9)
+    p.circle(source = cds_df, x = x_column, y = y_column, color='c', size=size)
     return p
 
 #================================================
 def landscape_building(task_name, db_name, log_path, FP_type,
                        prev_model, n_layer, 
                        SAR_result_dir, output_sdf_name,
-                       pack_sdf = True, vis_cutoff = 50,
+                       pack_sdf = True, vis_cutoff = 50, save_png = None,
                        smiles_field = 'salt_removed_smi', id_field = 'molregno'):
     '''
     generate chemical landscape for a specific task
@@ -359,6 +396,9 @@ def landscape_building(task_name, db_name, log_path, FP_type,
     print('==== rendering SAR for chemicals on the landscape ... ====')
     df = SAR_rendering(dataset.X, prev_model, df, id_field, smiles_field, SAR_result_dir, vis_cutoff)
 
+    # step4.5: make predictions
+    df['pred'] = model_predict(dataset.X, prev_model)
+
     # step5: pack sdf
     if pack_sdf:
         print('==== packing sdf file ... ====')
@@ -366,13 +406,14 @@ def landscape_building(task_name, db_name, log_path, FP_type,
 
     # step6: build interactive plot using Bokeh
     plot_df = df.drop(['ROMol'], axis = 1)
+
     return plot_df
 
 
 def landscape_positioning(custom_file, custom_smi_field, custom_id_field, custom_task_field,
                           landscape_sdf, task_name, db_name, FP_type, log_path,
                           prev_model, n_layer, custom_SAR_result_dir, custom_sdf_name,
-                          pack_sdf = True, vis_cutoff = 50,
+                          pack_sdf = True, vis_cutoff = 50, save_png = None,
                           smiles_field = 'salt_removed_smi', id_field = 'molregno'):
     # step1: prepare dataset for the landscape
     print('==== preparing dataset ... ====')
@@ -417,11 +458,16 @@ def landscape_positioning(custom_file, custom_smi_field, custom_id_field, custom
         plot_df['Label'] = mbk.labels_
         plot_df[smiles_field] = custom_df[custom_smi_field].tolist() + df[smiles_field].tolist()
         plot_df['imgs'] = custom_df['imgs'].tolist() + df['imgs'].tolist()
+
+        # step5.5: make prediction
+        plot_df['pred'] = model_predict(X_new, prev_model)
         df2sdf(plot_df, custom_sdf_name, smiles_field, id_field)
 
     # step6: build interactive plot using Bokeh
     plot_df = plot_df.drop(['ROMol'], axis = 1)
-    plot_df['group'] = [1] * len(custom_df) + [0] * len(df)
+    plot_df['group'] = [15] * len(custom_df) + [6] * len(df)
+
+    
     return plot_df
 
 

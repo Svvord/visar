@@ -40,6 +40,7 @@ def calculate_gradients_ST(X_train, prev_model):
             reconstruct = tf.gradients(op_tensor, X)[0]
     
             out = sess.run(reconstruct, feed_dict = feed_dict)
+    K.clear_session()
     return out
 
 def calculate_gradients_baseline(train_dataset, model_type):

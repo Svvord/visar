@@ -206,7 +206,7 @@ def ST_model_hyperparam_screen(fname, task_names, FP_type, params_dict, log_path
     for task in task_names:
         print('----------------------------------------------')
         dataset_file = '%s/temp.csv' % (log_path)
-        dataset = prepare_dataset(fname, [task], dataset_file, FP_type)
+        dataset, _ = prepare_dataset(fname, [task], dataset_file, FP_type)
         for cnt in range(3):
             print('Preparing dataset for %s of rep %d...' % (task, cnt))
             splitter = dc.splits.RandomSplitter(dataset_file)
@@ -250,7 +250,7 @@ def ST_model_training(fname, FP_type, best_hyperparams, result_path, epoch_num =
     for task in task_names:
         print('----------------------------------------------')
         dataset_file = '%s/temp.csv' % (result_path)
-        dataset = prepare_dataset(fname, [task], dataset_file, FP_type)
+        dataset, _ = prepare_dataset(fname, [task], dataset_file, FP_type)
 
         for cnt in range(3):
             print('Preparing dataset for %s of rep %d...' % (task, cnt))
