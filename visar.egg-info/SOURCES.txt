@@ -1,11 +1,11 @@
 README.md
 setup.py
-visar/Model_SAR_viz_utils.py
-visar/Model_landscape_utils.py
-visar/Model_training_utils.py
-visar/TRACE_utils.py
+visar/VISAR_model_utils_v2.py
 visar/__init__.py
 visar/align_it_utils.py
+visar/model_SAR_utils_v2.py
+visar/model_landscape_utils_v2.py
+visar/model_training_utils_v2.py
 visar.egg-info/PKG-INFO
 visar.egg-info/SOURCES.txt
 visar.egg-info/dependency_links.txt
