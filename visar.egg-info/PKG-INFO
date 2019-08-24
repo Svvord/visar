@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: visar
-Version: 0.3.0
+Version: 0.3.1
 Summary: This project aims to train neural networks by compound-protein interactions and provides interpretation of the learned model by interactively showing transformed chemical landscape and visualized SAR for chemicals of interest.
 Home-page: https://github.com/Svvord/visar
 Author: Qingyang Ding
