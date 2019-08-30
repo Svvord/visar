@@ -28,13 +28,11 @@ import pandas as pd
 
 from rdkit import Chem
 from rdkit.Chem import PandasTools
+
 import cairosvg
 
 from bokeh.plotting import figure, output_notebook, show
 from bokeh.models import ColumnDataSource
-
-from Model_SAR_viz_utils import calculate_gradients_ST, moltosvg, color_rendering, gradient2atom
-from Model_training_utils import prepare_dataset, extract_clean_dataset
 
 #------------------------------------------------
 # functions for transfer value calculating (layer1/2)
@@ -142,4 +140,18 @@ def cluster_MiniBatch(values, grain_size = 30):
                       n_init = 10, max_no_improvement=10, verbose=0, random_state=0)
     mbk.fit(values)
     return mbk
+
+#----------------------------------------------
+def df2sdf(df, output_sdf_name, 
+           smiles_field = 'canonical_smiles', id_field = 'chembl_id', 
+           selected_batch = None):
+    '''
+    pack pd.DataFrame to sdf_file
+    '''
+    if not selected_batch is None:
+        df = df.loc[df['label'] == selected_batch]
+    PandasTools.AddMoleculeColumnToFrame(df,smiles_field,'ROMol')
+    PandasTools.WriteSDF(df, output_sdf_name, idName=id_field, properties=df.columns)
+
+    return
 

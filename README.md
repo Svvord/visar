@@ -53,7 +53,15 @@ The training, testing and result processing pipeline is available in template ju
 
 After the train process, start the app in prompt window by 'bokeh serve --show VISAR_webapp' for interactive exploration.
 
-![avatar](app.png)
+![avatar](webapp_demo.jpg)
+
+The general steps for interactive analysis are:
+- Set the location (including the prefix) of the pre-composed dataframes and the mode of your training. After clicking "Run" button on the upper panel, the whole interface would update according to your settings.
+
+- Explore the activity profile of the chemical space on the left panel. 
+There are several places allowing for interactive exploring, including: A. color options for the scatter plotting, enabling different color rendering based on eg. different activity of the compounds; B. number of bi-clusters, which correlated with the arrangement of the heatmap on the bottom panel (through trying out different bi-cluster numbers, users could gain an idea of how the activity profile is distributed on the chemical landscape); E. information fo the compounds when hovering your mouse on the scatter plot, displaying its ID, batch ID and the color code for the bi-cluster where it belongs; F. information of the batch when hovering your mouse on the heatmap, displaying its ID and color code for the bi-cluster where it belongs.
+
+- Upon selecting the batch or indivisual compounds on the left panel, visualize chemical structures along with the SAR pattern on the right panel. There are two ways for batch selection: first is to directly click on the heatmap, second is to use the drop-down list (C). As for compound selection, use the tap mode of the scatter plot and click on the points. Since for RobustMT mode, multiple tasks give their corresponding SAR patterns for the compound; thus by selecting SAR task (D), the SAR pattern of the compounds would update accordingly.
 
 The generation of SDF file for selected compounds and pharmacophor analysis can be referred to [the template jupyter notebook](https://github.com/Svvord/visar/blob/master/Template%20-%20pharmacophore%20model%20analysis%20for%20selected%20batches.ipynb).
 
@@ -62,11 +70,11 @@ The generation of SDF file for selected compounds and pharmacophor analysis can 
 
 (Back to [Table of contents](#table-of-contents).)
 
-1. Get your local copy of the TeachOpenCADD repository (including the template jupyter notebooks) by
+1. Get your local copy of the VISAR repository (including the template jupyter notebooks) by
 
 - downloading it as zip archive and unzipping it: 
 
-- cloning it to your computer using the package `git`:
+- OR cloning it to your computer using the package `git`:
 ```bash
 git clone https://github.com/Svvord/visar.git
 ```
@@ -74,7 +82,7 @@ git clone https://github.com/Svvord/visar.git
 2. For training environment, python=3.5 is recommended, and the environment is depended on: Deepchem, Rdkit, Keras, Tensorflow, Numpy, Pandas, Sklearn, Scipy.
 
 ```bash
-# Install packages via pip (which is probably installed by default in your environment)
+# Install packages via pip
 pip install visar
 ```
 
@@ -86,13 +94,13 @@ conda create -n visar python=3.6
 conda activate visar
 
 # Install packages via conda
-conda install jupyter  # Installs also ipykernel
+conda install bokeh 
 conda install -c rdkit rdkit  # Installs also numpy and pandas
-conda install -c samoturk pymol  # Installs also freeglut and glew
-conda install -c conda-forge pmw  # Necessary for PyMol terminal window to pop up
 conda install -c conda-forge scikit-learn  # Installs also scipy
+conda install jupyter  # Installs also ipykernel
 conda install -c conda-forge seaborn  # Installs also matplotlib
-conda install bokeh
+conda install -c samoturk pymol  # optional
+conda install -c conda-forge pmw  # optional
 
 # start the web app
 cd /path/of/visar
