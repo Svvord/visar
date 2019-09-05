@@ -57,6 +57,8 @@ After the train process, start the app in prompt window by 'bokeh serve --show V
 
 The general steps for interactive analysis are:
 - Set the location (including the prefix) of the pre-composed dataframes and the mode of your training. After clicking "Run" button on the upper panel, the whole interface would update according to your settings.
+	- For single task sample dataset, set "Prefix of the input data:" as 'VISAR_webapp/data/T107_rep2_50_' with 'Mode of the model:' as 'ST', and then click "Run";
+	- For multitask sample dataset, set 'Prefix of the input data:' as 'VISAR_webapp/data/output_' with 'Mode of the model:' as 'RobustMT', and then click "Run".
 
 - Explore the activity profile of the chemical space on the left panel. 
 There are several places allowing for interactive exploring, including: A. color options for the scatter plotting, enabling different color rendering based on eg. different activity of the compounds; B. number of bi-clusters, which correlated with the arrangement of the heatmap on the bottom panel (through trying out different bi-cluster numbers, users could gain an idea of how the activity profile is distributed on the chemical landscape); E. information fo the compounds when hovering your mouse on the scatter plot, displaying its ID, batch ID and the color code for the bi-cluster where it belongs; F. information of the batch when hovering your mouse on the heatmap, displaying its ID and color code for the bi-cluster where it belongs.
