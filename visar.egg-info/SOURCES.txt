@@ -1,0 +1,7 @@
+README.md
+setup.py
+visar.egg-info/PKG-INFO
+visar.egg-info/SOURCES.txt
+visar.egg-info/dependency_links.txt
+visar.egg-info/requires.txt
+visar.egg-info/top_level.txt

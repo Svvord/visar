@@ -1,0 +1,8 @@
+numpy
+scipy
+scikit-learn
+pandas
+keras
+deepchem
+cairosvg
+bokeh
