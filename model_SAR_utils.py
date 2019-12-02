@@ -8,7 +8,7 @@ Created on Sun June  16 2019
 import tensorflow.keras.backend as K
 import tensorflow as tf
 from rdkit.Chem import rdMolDescriptors
-from keras.models import load_model
+from tensorflow.keras.models import load_model
 from rdkit import Chem
 import numpy as np
 import matplotlib.cm as cm

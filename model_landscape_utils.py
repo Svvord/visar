@@ -6,12 +6,12 @@ Created on Sun June  16 2019
 """
 import deepchem as dc
 
-from keras.layers import Dense, Input
-from keras.models import Model
-from keras.optimizers import Adam
-from keras.models import load_model
+from tensorflow.keras.layers import Dense, Input
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.models import load_model
 import tensorflow as tf
-from keras import backend as K
+from tensorflow.keras import backend as K
 
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
@@ -31,16 +31,13 @@ from rdkit.Chem import PandasTools
 
 import cairosvg
 
-from bokeh.plotting import figure, output_notebook, show
-from bokeh.models import ColumnDataSource
-
 #------------------------------------------------
 # functions for transfer value calculating (layer1/2)
 def ST_model_layer1(n_features, layer_size, pretrained_params,
             lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0, clipnorm=5):
     training_dat = Input(shape = (n_features,), dtype = 'float32')
     X = Dense(layer_size[0], activation = 'relu')(training_dat)
-    model = Model(input = training_dat, output = X)
+    model = Model(training_dat, X)
     optimizer = Adam(lr=lr, beta_1=beta_1, beta_2=beta_2, epsilon=epsilon)
     model.compile(loss = 'mean_squared_error', optimizer=optimizer)
     
@@ -53,7 +50,7 @@ def ST_model_layer2(n_features, layer_size,pretrained_params,
     training_dat = Input(shape = (n_features,), dtype = 'float32')
     X = Dense(layer_size[0], activation = 'relu')(training_dat)
     X = Dense(layer_size[1], activation = 'relu')(X)
-    model = Model(input = training_dat, output = X)
+    model = Model(training_dat, X)
     optimizer = Adam(lr=lr, beta_1=beta_1, beta_2=beta_2, epsilon=epsilon)
     model.compile(loss = 'mean_squared_error', optimizer=optimizer)
     

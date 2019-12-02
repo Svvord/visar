@@ -2,11 +2,15 @@ import deepchem as dc
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from keras.models import load_model
+from tensorflow.keras.models import load_model
 import random
 
 from visar.model_training_utils import prepare_dataset
-from visar.model_landscape_utils import calculate_transfer_values, calculate_transfer_values_ST, dim_reduce, cluster_MiniBatch
+from visar.model_landscape_utils import (
+    calculate_transfer_values,
+    calculate_transfer_values_ST,
+    dim_reduce,
+    cluster_MiniBatch)
 from visar.model_SAR_utils import calculate_gradients_RobustMT, calculate_gradients_ST
 
 from scipy.stats import pearsonr
@@ -14,6 +18,14 @@ from bokeh.palettes import Category20_20, Category20b_20
 
 from sklearn.cluster.bicluster import SpectralCoclustering
 from sklearn import preprocessing
+from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
+from sklearn.cluster import MiniBatchKMeans
+
+from sklearn import linear_model
+from sklearn.svm import LinearSVR
+
+import pdb
 
 """ contribution from Hans de Winter """
 from rdkit import Chem
@@ -103,112 +115,13 @@ def update_bicluster(batch_df, task_df, compound_df, mode = 'RobustMT', K = 5):
 
     return batch_df, task_df, compound_df
 
-def generate_RUNKEY_dataframe_RobustMT(prev_model, output_prefix, task_list, dataset_file, FP_type, add_features,
-                              n_features, layer_sizes, bypass_layer_sizes, model_flag, n_bypass,
-                              MT_dat_name = './data/MT_data_clean_June28.csv',
-                              smiles_field = 'canonical_smiles', id_field = 'chembl_id',
-                              bypass_dropouts = [.5], dropout = 0.5, learning_rate = 0.001, n_layer = 2):
-    if add_features is None:
-    	tasks = task_list
-    else:
-    	tasks = task_list + add_features
-
-    n_tasks = len(tasks)
-    # load dataset
-    print('------------- Loading dataset --------------------')
-    dataset, df = prepare_dataset(MT_dat_name, task_list, dataset_file, FP_type,
-                                  smiles_field = smiles_field,
-                                  add_features = add_features,
-                                  id_field = id_field, model_flag = model_flag)
-
-    # load prev_model
-    print('------------- Loading previous trained models ------------------')
-    model = dc.models.RobustMultitaskRegressor(n_tasks = n_tasks, n_features = n_features, layer_sizes = layer_sizes,
-                                               bypass_layer_sizes= bypass_layer_sizes, bypass_dropouts = bypass_dropouts,
-                                               dropout = dropout, learning_rate = learning_rate)
-    model.restore(checkpoint = prev_model)
-
-    ### for chemical information
-    print('------------- Prepare information for chemicals ------------------')
-    # build transfer model
-    model_transfer = calculate_transfer_values(prev_model=prev_model, n_tasks = n_tasks,
-                                           layer_sizes = layer_sizes, bypass_layer_sizes=bypass_layer_sizes, n_layer = n_layer)
-    coord_values = dim_reduce(model_transfer,dataset.X)
-    pred_mat = model.predict(dataset)
-
-    pred_df = pd.DataFrame(pred_mat)
-    pred_df.columns = ['pred_' + xx for xx in tasks]
-    pred_df['chembl_id'] = dataset.ids
-
-    coord_df = pd.DataFrame(coord_values)
-    coord_df.columns = ['x', 'y']
-    coord_df['chembl_id'] = dataset.ids
-
-    coord_df['chembl_id'] = coord_df['chembl_id'].astype(int)
-    pred_df['chembl_id'] = pred_df['chembl_id'].astype(int)
-    compound_df = pd.merge(df, coord_df, left_on = id_field, right_on = 'chembl_id')
-    compound_df = pd.merge(compound_df, pred_df, on = 'chembl_id')
-
-    ### for cluster information
-    print('------------- Prepare information for minibatches ------------------')
-    if coord_values.shape[0] > 8000:
-        selected_compounds = random.sample([k for k in range(coord_values.shape[0])], 8000)
-        pred_mat = pred_mat[selected_compounds,:]
-        coord_values = coord_values[selected_compounds,:]
-        compound_df = compound_df.loc[selected_compounds]
-        values = np.matrix(compound_df[['x','y']])
-        mbk = cluster_MiniBatch(values)
-    else:
-        mbk = cluster_MiniBatch(coord_values)
-
-    mbk.means_labels_unique = np.unique(mbk.labels_)
-    n_row = len(np.unique(mbk.labels_))
-    n_col = pred_mat.shape[1]
-    cluster_info_mat = np.zeros((n_row, (n_col + 3)))
-    for k in range(n_row):
-        mask = mbk.labels_ == mbk.means_labels_unique[k]
-        cluster_info_mat[k, 0:n_col] = np.nanmean(pred_mat[mask,:], axis = 0)
-        cluster_info_mat[k, n_col] = sum(mask)
-        cluster_info_mat[k, (n_col + 1) : (n_col + 3)] = np.nanmean(coord_values[mask,:], axis = 0)
-    compound_df['label'] = mbk.labels_
-    batch_df = pd.DataFrame(cluster_info_mat)
-    batch_df.columns = ['avg_' + xx for xx in tasks] + ['size', 'coordx', 'coordy']
-    batch_df['Label_id'] = mbk.means_labels_unique
-
-    ### for task information
-    print('------------- Prepare information for tasks ------------------')
-    TASK_LAYERS = ['Dense_%d/Dense_%d/Relu:0' % (10 + n_bypass * 2 * idx, 10 + n_bypass * 2 * idx)
-               for idx in range(n_tasks)]
-    SHARE_LAYER = 'Dense_7/Dense_7/Relu:0'
-    grad_mat = np.zeros((len(TASK_LAYERS)+1, n_features))
-
-    r2_list = []
-    for i in range(len(TASK_LAYERS)):
-        grad_mat[i,:] = calculate_gradients_RobustMT(dataset.X, TASK_LAYERS[i], prev_model,
-                                                 n_tasks, n_features, layer_sizes, bypass_layer_sizes)
-        #r2_list.append(pearsonr(dataset.y[:,i], pred_mat[:,i])[0] ** 2)
-    grad_mat[len(TASK_LAYERS),:] = calculate_gradients_RobustMT(dataset.X, SHARE_LAYER, prev_model,
-                                                           n_tasks, n_features, layer_sizes, bypass_layer_sizes)
-    task_df = pd.DataFrame(grad_mat.T)
-    task_df.columns = tasks + ['SHARE']
-
-    ### generate color labels by default
-    print('------- Generate color labels with default K of %d --------' % np.min([n_tasks, 5]))
-    batch_df, task_df, compound_df = update_bicluster(batch_df, task_df, compound_df)
-
-    ### wrapping up
-    print('-------------- Saving datasets ----------------')
-    compound_df.to_csv(output_prefix + 'compound_df.csv', index = False)
-    batch_df.to_csv(output_prefix + 'batch_df.csv', index = False)
-    task_df.to_csv(output_prefix + 'task_df.csv', index = False)
-
-    return
-
 
 def generate_RUNKEY_dataframe_ST(prev_model, output_prefix, task_list, dataset_file, FP_type,
                                  add_features, mode = 'ST',
                                  MT_dat_name = './data/MT_data_clean_June28.csv', n_layer = 2,
-                                 smiles_field = 'canonical_smiles', id_field = 'chembl_id'):
+                                 smiles_field = 'canonical_smiles', id_field = 'chembl_id',
+                                 custom_file = None, custom_id_field = None, custom_task_field = None,
+                                 custom_smiles_field = None, sep_custom_file = ','):
     if add_features is None:
         tasks = task_list
     else:
@@ -220,45 +133,125 @@ def generate_RUNKEY_dataframe_ST(prev_model, output_prefix, task_list, dataset_f
                                   smiles_field = smiles_field,
                                   add_features = add_features,
                                   id_field = id_field, model_flag = 'ST')
+    df['chembl_id'] = df[id_field].astype(int)
+    switch_field = lambda item:'canonical_smiles' if  item == smiles_field  else item
+    df.columns = [switch_field(item) for item in df.columns.tolist()]
+    N_training = df.shape[0]
+
+    # if custom file exisit, processing the file
+    custom_file_flag = False
+    if custom_file is not None:
+        custom_file_flag = True
+        print('------------- Loading custom file --------------------')
+        custom_compound_df = pd.read_csv(custom_file, sep = sep_custom_file)
+
+        ## checking point: the ids for custom files must be unique
+        if len(set(custom_compound_df[custom_id_field])) < custom_compound_df.shape[0]:
+            print('Error: The ids for custom files must be unique')
+            return
+
+        all_mols = custom_compound_df[custom_smiles_field].tolist()
+        new_mols = all_mols
+        valid_filter = [True for k in range(len(new_mols))]
+
+        for i in range(len(new_mols)):
+            (molSmiles, neutralised) = NeutraliseCharges_RemoveSalt(all_mols[i])
+            if molSmiles is not None:
+                new_mols[i] = molSmiles
+            else:
+                valid_filter[i] = False
+            if i % 100 == 0:
+                print(i)
+
+        custom_compound_df['canonical_smiles'] = new_mols
+        N_raw = len(custom_compound_df)
+        custom_compound_df = custom_compound_df.loc[valid_filter]
+        N_clean = len(custom_compound_df)
+        #custom_compound_df['chembl_id'] = custom_compound_df[custom_id_field].astype(int)
+        custom_compound_df['chembl_id'] = custom_compound_df[custom_id_field]
+        print('Read in %d compounds; %d valid compounds.' % (N_raw, N_clean))
+
+        if FP_type == 'Circular_2048':
+            custom_compound_df.to_csv(dataset_file)
+            featurizer = dc.feat.CircularFingerprint(size=2048)
+            loader = dc.data.CSVLoader(id_field=custom_id_field,
+                                   smiles_field='canonical_smiles',
+                                   tasks = [custom_task_field],
+                                   featurizer=featurizer)
+            custom_dataset = loader.featurize(dataset_file)
+        N_custom = custom_compound_df.shape[0]
+
     # load prev_model
     print('------------- Loading previous trained models ------------------')
     model = load_model(prev_model)
 
     ### for chemical information
     print('------------- Prepare information for chemicals ------------------')
+    if custom_file_flag:
+        values = np.concatenate((dataset.X, custom_dataset.X), axis = 0)
+    else:
+        values = dataset.X
+
     # build transfer model
     model_transfer = calculate_transfer_values_ST(prev_model=prev_model, n_layer = n_layer)
-    coord_values = dim_reduce(model_transfer,dataset.X)
+    coord_values = dim_reduce(model_transfer,values)
     pred_mat = model.predict(dataset.X)
 
     pred_df = pd.DataFrame(pred_mat)
     pred_df.columns = ['pred_' + xx for xx in tasks]
     pred_df['chembl_id'] = dataset.ids
 
-    coord_df = pd.DataFrame(coord_values)
+    coord_df = pd.DataFrame(coord_values[0:N_training,:])
     coord_df.columns = ['x', 'y']
     coord_df['chembl_id'] = dataset.ids
 
+    pred_df['chembl_id'] = pred_df['chembl_id'].astype(int)
+    coord_df['chembl_id'] = coord_df['chembl_id'].astype(int)
     compound_df = pd.merge(df, coord_df, on = 'chembl_id')
     compound_df = pd.merge(compound_df, pred_df, on = 'chembl_id')
 
+    if custom_file_flag:
+        pred_custom_mat = model.predict(custom_dataset.X)
+
+        pred_df2 = pd.DataFrame(pred_custom_mat)
+        pred_df2.columns = ['pred_' + xx for xx in tasks]
+        pred_df2['chembl_id'] = custom_dataset.ids
+
+        coord_df2 = pd.DataFrame(coord_values[N_training:coord_values.shape[0],:])
+        coord_df2.columns = ['x', 'y']
+        coord_df2['chembl_id'] = custom_dataset.ids
+
+        if not type(custom_compound_df[custom_id_field].iloc[0]) == str:
+            coord_df2['chembl_id'] = coord_df2['chembl_id'].astype(int)
+            pred_df2['chembl_id'] = pred_df2['chembl_id'].astype(int)
+        compound_df2 = pd.merge(custom_compound_df, coord_df2, on = 'chembl_id')
+        compound_df2 = pd.merge(compound_df2, pred_df2, on = 'chembl_id')
+
     ### for cluster information
     print('------------- Prepare information for minibatches ------------------')
-    transfer_values = model_transfer.predict(dataset.X)
-    mbk = cluster_MiniBatch(transfer_values)
+    if custom_file_flag:
+        pred_mat_concat = np.concatenate((pred_mat, pred_custom_mat), axis = 0)
+    else:
+        pred_mat_concat = pred_mat
+
+    mbk = cluster_MiniBatch(coord_values)
     mbk.means_labels_unique = np.unique(mbk.labels_)
     n_row = len(np.unique(mbk.labels_))
     n_col = pred_mat.shape[1]
     cluster_info_mat = np.zeros((n_row, (n_col + 3)))
+
     for k in range(n_row):
         mask = mbk.labels_ == mbk.means_labels_unique[k]
-        cluster_info_mat[k, 0:n_col] = np.nanmean(pred_mat[mask,:], axis = 0)
+        cluster_info_mat[k, 0:n_col] = np.nanmean(pred_mat_concat[mask,:], axis = 0)
         cluster_info_mat[k, n_col] = sum(mask)
         cluster_info_mat[k, (n_col + 1) : (n_col + 3)] = np.nanmean(coord_values[mask,:], axis = 0)
-    compound_df['label'] = mbk.labels_
+    compound_df['label'] = mbk.labels_[0:N_training]
     batch_df = pd.DataFrame(cluster_info_mat)
     batch_df.columns = ['avg_' + xx for xx in tasks] + ['size', 'coordx', 'coordy']
     batch_df['Label_id'] = mbk.means_labels_unique
+
+    if custom_file_flag:
+        compound_df2['label'] = mbk.labels_[N_training: len(mbk.labels_)]
 
     ### for task information
     print('------------- Prepare information for tasks ------------------')
@@ -270,11 +263,22 @@ def generate_RUNKEY_dataframe_ST(prev_model, output_prefix, task_list, dataset_f
     print('------- Generate color labels with default K of 5 --------')
     batch_df, task_df, compound_df = update_bicluster(batch_df, task_df, compound_df, mode = mode)
 
+    if custom_file_flag:
+        lut2 = dict(zip(batch_df['Label_id'], batch_df['batch_label_color']))
+        lut22 = dict(zip(batch_df['Label_id'], batch_df['batch_label']))
+        lut222 = dict(zip(compound_df['label'], compound_df['label_color']))
+        compound_df2['batch_label_color'] = compound_df2['label'].map(lut2)
+        compound_df2['batch_label'] = compound_df2['label'].map(lut22)
+        compound_df2['label_color'] = compound_df2['label'].map(lut222)
+
     ### wrapping up
     print('-------------- Saving datasets ----------------')
     compound_df.to_csv(output_prefix + 'compound_df.csv', index = False)
     batch_df.to_csv(output_prefix + 'batch_df.csv', index = False)
     task_df.to_csv(output_prefix + 'task_df.csv', index = False)
+
+    if custom_file_flag:
+        compound_df2.to_csv(output_prefix + 'compound_custom_df.csv', index = False)
 
     return
 
@@ -329,7 +333,7 @@ def generate_performance_plot_RobustMT(train_file, test_file):
     return plot_df
 
 
-def generate_RUNKEY_dataframe_RobustMT_new(prev_model, output_prefix, task_list, dataset_file, FP_type, add_features,
+def generate_RUNKEY_dataframe_RobustMT(prev_model, output_prefix, task_list, dataset_file, FP_type, add_features,
                               n_features, layer_sizes, bypass_layer_sizes, model_flag, n_bypass,
                               MT_dat_name = './data/MT_data_clean_June28.csv', model_test_log = None,
                               smiles_field = 'canonical_smiles', id_field = 'chembl_id',
@@ -373,7 +377,7 @@ def generate_RUNKEY_dataframe_RobustMT_new(prev_model, output_prefix, task_list,
         custom_compound_df = pd.read_csv(custom_file, sep = sep_custom_file)
 
         ## checking point: the ids for custom files must be unique
-        if len(set(custom_compound_df[custom_id_field])) < custom_compound_df.shape[1]:
+        if len(set(custom_compound_df[custom_id_field])) < custom_compound_df.shape[0]:
             print('Error: The ids for custom files must be unique')
             return
 
@@ -455,8 +459,9 @@ def generate_RUNKEY_dataframe_RobustMT_new(prev_model, output_prefix, task_list,
         coord_df2.columns = ['x', 'y']
         coord_df2['chembl_id'] = custom_dataset.ids
 
-        #coord_df2['chembl_id'] = coord_df2['chembl_id'].astype(int)
-        #pred_df2['chembl_id'] = pred_df2['chembl_id'].astype(int)
+        if not type(custom_compound_df[custom_id_field].iloc[0]) == str:
+            coord_df2['chembl_id'] = coord_df2['chembl_id'].astype(int)
+            pred_df2['chembl_id'] = pred_df2['chembl_id'].astype(int)
         compound_df2 = pd.merge(custom_compound_df, coord_df2, on = 'chembl_id')
         compound_df2 = pd.merge(compound_df2, pred_df2, on = 'chembl_id')
 
@@ -524,4 +529,175 @@ def generate_RUNKEY_dataframe_RobustMT_new(prev_model, output_prefix, task_list,
     if custom_file_flag:
         compound_df2.to_csv(output_prefix + 'compound_custom_df.csv', index = False)
 
+    return
+
+
+def generate_RUNKEY_dataframe_baseline(output_prefix, task, dataset_file, FP_type,
+                                       add_features, mode = 'SVR',
+                                       MT_dat_name = './data/MT_data_clean_June28.csv',
+                                       smiles_field = 'canonical_smiles', id_field = 'chembl_id',
+                                       custom_file = None, custom_id_field = None, custom_task_field = None,
+                                       custom_smiles_field = None, sep_custom_file = ','):
+
+    print('------------- Loading dataset and train baseline model --------------------')
+    dataset, df = prepare_dataset(MT_dat_name, [task], dataset_file, FP_type,
+                                  smiles_field = smiles_field,
+                                  add_features = add_features,
+                                  id_field = id_field, model_flag = 'ST')
+    df['chembl_id'] = df[id_field].astype(int)
+    switch_field = lambda item:'canonical_smiles' if  item == smiles_field  else item
+    df.columns = [switch_field(item) for item in df.columns.tolist()]
+    N_training = df.shape[0]
+
+    # if custom file exisit, processing the file
+    custom_file_flag = False
+    if custom_file is not None:
+        custom_file_flag = True
+        print('------------- Loading custom file --------------------')
+        custom_compound_df = pd.read_csv(custom_file, sep = sep_custom_file)
+
+        ## checking point: the ids for custom files must be unique
+        if len(set(custom_compound_df[custom_id_field])) < custom_compound_df.shape[0]:
+            print('Error: The ids for custom files must be unique')
+            return
+
+        all_mols = custom_compound_df[custom_smiles_field].tolist()
+        new_mols = all_mols
+        valid_filter = [True for k in range(len(new_mols))]
+
+        for i in range(len(new_mols)):
+            (molSmiles, neutralised) = NeutraliseCharges_RemoveSalt(all_mols[i])
+            if molSmiles is not None:
+                new_mols[i] = molSmiles
+            else:
+                valid_filter[i] = False
+            if i % 100 == 0:
+                print(i)
+
+        custom_compound_df['canonical_smiles'] = new_mols
+        N_raw = len(custom_compound_df)
+        custom_compound_df = custom_compound_df.loc[valid_filter]
+        N_clean = len(custom_compound_df)
+        #custom_compound_df['chembl_id'] = custom_compound_df[custom_id_field].astype(int)
+        custom_compound_df['chembl_id'] = custom_compound_df[custom_id_field]
+        print('Read in %d compounds; %d valid compounds.' % (N_raw, N_clean))
+
+        if FP_type == 'Circular_2048':
+            custom_compound_df.to_csv(dataset_file)
+            featurizer = dc.feat.CircularFingerprint(size=2048)
+            loader = dc.data.CSVLoader(id_field=custom_id_field,
+                                   smiles_field='canonical_smiles',
+                                   tasks = [custom_task_field],
+                                   featurizer=featurizer)
+            custom_dataset = loader.featurize(dataset_file)
+        N_custom = custom_compound_df.shape[0]
+
+    # split training/test dataset
+    splitter = dc.splits.RandomSplitter(dataset_file)
+    train_dataset, valid_dataset, test_dataset = splitter.train_valid_test_split(dataset)
+    # baseline model training
+    X_new = np.c_[[1]*train_dataset.X.shape[0], train_dataset.X]
+    if mode == 'SVR':
+        clf = LinearSVR(C = 1.0, epsilon = 0.2)
+        try:
+            clf.fit(X_new, train_dataset.y)
+        except Exception as e:
+            print(e)
+    elif mode == 'RidgeCV':
+        alphas = np.logspace(start = -1, stop = 2, num = 20)
+        clf = linear_model.RidgeCV(alphas)
+        try:
+            clf.fit(X_new, train_dataset.y)
+        except Exception as e:
+            print(e)
+
+    print('------------- Prepare information for chemicals ------------------')
+    if custom_file_flag:
+        values = np.concatenate((dataset.X, custom_dataset.X), axis = 0)
+    else:
+        values = dataset.X
+
+    pca = PCA(n_components = 20)
+    value_reduced_20d = pca.fit_transform(values)
+    tsne = TSNE(n_components = 2)
+    coord_values = tsne.fit_transform(value_reduced_20d)
+
+    pred_mat = clf.predict(np.c_[[1]*dataset.X.shape[0], dataset.X])
+
+    pred_df = pd.DataFrame(pred_mat)
+    pred_df.columns = ['pred_' + task]
+    pred_df['chembl_id'] = dataset.ids
+
+    coord_df = pd.DataFrame(coord_values[0:N_training,:])
+    coord_df.columns = ['x','y']
+    coord_df['chembl_id'] = dataset.ids
+
+    pred_df['chembl_id'] = pred_df['chembl_id'].astype(int)
+    coord_df['chembl_id'] = coord_df['chembl_id'].astype(int)
+    compound_df = pd.merge(df, coord_df, on = 'chembl_id')
+    compound_df = pd.merge(compound_df, pred_df, on = 'chembl_id')
+
+    if custom_file_flag:
+        pred_custom_mat = clf.predict(np.c_[[1]*custom_dataset.X.shape[0], custom_dataset.X])
+
+        pred_df2 = pd.DataFrame(pred_custom_mat)
+        pred_df2.columns = ['pred_' + task]
+        pred_df2['chembl_id'] = custom_dataset.ids
+
+        coord_df2 = pd.DataFrame(coord_values[N_training:coord_values.shape[0],:])
+        coord_df2.columns = ['x', 'y']
+        coord_df2['chembl_id'] = custom_dataset.ids
+
+        if not type(custom_compound_df[custom_id_field].iloc[0]) == str:
+            coord_df2['chembl_id'] = coord_df2['chembl_id'].astype(int)
+            pred_df2['chembl_id'] = pred_df2['chembl_id'].astype(int)
+        compound_df2 = pd.merge(custom_compound_df, coord_df2, on = 'chembl_id')
+        compound_df2 = pd.merge(compound_df2, pred_df2, on = 'chembl_id')
+
+    print('------------- Prepare information for minibatches ------------------')
+    if custom_file_flag:
+        pred_mat_concat = np.concatenate((pred_mat, pred_custom_mat), axis = 0)
+    else:
+        pred_mat_concat = pred_mat
+
+    mbk = cluster_MiniBatch(coord_values)
+    mbk.means_labels_unique = np.unique(mbk.labels_)
+    n_row = len(mbk.means_labels_unique)
+    n_col = 1
+    cluster_info_mat = np.zeros((n_row, (n_col + 3)))
+
+    for k in range(n_row):
+        mask = mbk.labels_ == mbk.means_labels_unique[k]
+        cluster_info_mat[k, 0:n_col] = np.nanmean(pred_mat_concat[mask], axis = 0)
+        cluster_info_mat[k, n_col] = sum(mask)
+        cluster_info_mat[k, (n_col + 1) : (n_col + 3)] = np.nanmean(coord_values[mask,:], axis = 0)
+    compound_df['label'] = mbk.labels_[0:N_training]
+    batch_df = pd.DataFrame(cluster_info_mat)
+    batch_df.columns = ['avg_' + task] + ['size', 'coordx', 'coordy']
+    batch_df['Label_id'] = mbk.means_labels_unique
+
+    if custom_file_flag:
+        compound_df2['label'] = mbk.labels_[N_training: len(mbk.labels_)]
+
+    print('------------- Saving datasets --------------')
+    grad_mat = clf.coef_.reshape(-1)[1:]
+    task_df = pd.DataFrame(grad_mat.T)
+    task_df.columns = [task]
+
+    batch_df, task_df, compound_df = update_bicluster(batch_df, task_df, compound_df, mode = 'ST')
+
+    if custom_file_flag:
+        lut2 = dict(zip(batch_df['Label_id'], batch_df['batch_label_color']))
+        lut22 = dict(zip(batch_df['Label_id'], batch_df['batch_label']))
+        lut222 = dict(zip(compound_df['label'], compound_df['label_color']))
+        compound_df2['batch_label_color'] = compound_df2['label'].map(lut2)
+        compound_df2['batch_label'] = compound_df2['label'].map(lut22)
+        compound_df2['label_color'] = compound_df2['label'].map(lut222)
+
+    compound_df.to_csv(output_prefix + 'compound_df.csv', index = False)
+    batch_df.to_csv(output_prefix + 'batch_df.csv', index = False)
+    task_df.to_csv(output_prefix + 'task_df.csv', index = False)
+
+    if custom_file_flag:
+        compound_df2.to_csv(output_prefix + 'compound_custom_df.csv', index = False)
     return

@@ -5,6 +5,7 @@ from rdkit.Chem.Draw import rdMolDraw2D
 from rdkit.Chem import rdMolDescriptors
 from IPython.display import SVG
 import cairosvg
+from  sklearn import preprocessing
 
 def gradient2atom(smi, gradient, pos_cut = 3, neg_cut = -3, nBits = 2048):
     """
@@ -48,11 +49,11 @@ def gradient2atom(smi, gradient, pos_cut = 3, neg_cut = -3, nBits = 2048):
             highlit_neg.append(i)
     return mol, highlit_pos, highlit_neg, atomsToUse
 
-def color_rendering(atomsToUse, cutoff):
+def color_rendering(atomsToUse, cutoff = 10, clip = 0.5):
     cmap = cm.RdBu_r
     color_dict = {}
     #print(atomsToUse)
-    atomsToUse = (atomsToUse.flatten() / cutoff) + 0.5
+    atomsToUse = (atomsToUse.flatten() - clip) / cutoff + 0.5
     for i in range(len(atomsToUse)):
         color_dict[i] = cmap(atomsToUse[i])[0:3]
     return atomsToUse, color_dict
@@ -68,16 +69,28 @@ def moltosvg(mol,molSize=(450,200),kekulize=True,drawer=None,**kwargs):
 
 #-----------------------------------------
 
-def plot_SAR(compound_df, task_df, chem_idx, task_id, SAR_cnt, mode = 'RobustMT', cutoff = 30, n_features = 2048):
+def plot_SAR(compound_df, task_df, chem_idx, task_id, SAR_cnt, 
+             mode = 'RobustMT', cutoff = 10, clip = 0.5,
+             n_features = 2048):
     smiles = compound_df['canonical_smiles'].iloc[chem_idx]
 
     if mode == 'RobustMT':
         grad = task_df[task_id].tolist()
     elif mode == 'ST':
         grad = task_df.iloc[chem_idx].tolist()
-    
+    elif mode == 'baseline':
+        grad = task_df[task_id].tolist()
+
+    #grad = preprocessing.scale(np.array(grad).reshape(-1))
+    #print(grad.shape)
+
     mol, highlit_pos, highlit_neg, atomsToUse = gradient2atom(smiles, grad)
-    atomsToUse, color_dict = color_rendering(atomsToUse, cutoff)
+    cutoff = np.ceil(np.max(np.array([np.absolute(np.min(atomsToUse)), np.max(atomsToUse)])))
+    clip = np.mean(atomsToUse)
+    #print(cutoff, clip)
+
+    atomsToUse, color_dict = color_rendering(atomsToUse, cutoff, clip)
+
     img = moltosvg(mol, molSize=(300,200), highlightAtoms=[m for m in range(len(atomsToUse))],
             highlightAtomColors = color_dict, highlightBonds=[])
     cairosvg.svg2png(bytestring=img.data, write_to = 'VISAR_webapp/static/SAR_%d.png' % SAR_cnt)

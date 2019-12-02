@@ -74,9 +74,9 @@ def update_grid_chemical(batch_selected = None):
 def update_SAR_chemical(task_id ,chem_idx = 0):
     global SAR_cnt, compound_df, custom_df, task_df, MODE
     if radio_button_group.active == 0:
-        plot_SAR(compound_df, task_df, chem_idx, task_id, SAR_cnt, mode = MODE, cutoff = 30, n_features = 2048)
+        plot_SAR(compound_df, task_df, chem_idx, task_id, SAR_cnt, mode = MODE, cutoff = 10, n_features = 2048)
     elif radio_button_group.active == 1:
-        plot_SAR(custom_df, task_df, chem_idx, task_id, SAR_cnt, mode = MODE, cutoff = 30, n_features = 2048)
+        plot_SAR(custom_df, task_df, chem_idx, task_id, SAR_cnt, mode = MODE, cutoff = 10, n_features = 2048)
     sar_img = Div(text="<img src='VISAR_webapp/static/SAR_%d.png', height='200', width='300'>" % SAR_cnt)
     SAR_cnt += 1
     return sar_img
@@ -86,18 +86,18 @@ def update_bicluster(K = None):
 
     if MODE == 'RobustMT':
         n_tasks = task_df.shape[1] - 1
-    elif MODE == 'ST':
+    elif MODE == 'ST' or MODE == 'baseline':
         n_tasks = 1
     elif MODE == 'MT':
         n_tasks = task_df.shape[1]
     
-    if not MODE == 'ST':
+    if MODE == 'RobustMT':
         # cocluster of the minibatch predictive matrix
         X = preprocessing.scale(np.matrix(batch_df)[:,0:n_tasks])
         cocluster = SpectralCoclustering(n_clusters=K, random_state=0)
         cocluster.fit(X)
         batch_df['batch_label'] = cocluster.row_labels_
-    else:
+    elif MODE == 'ST' or MODE == 'baseline':
         rank_x = batch_df[batch_df.columns[0]].rank().tolist()
         groups = pd.qcut(rank_x, K, duplicates='drop')
         batch_df['batch_label'] = groups.codes
@@ -135,7 +135,7 @@ def update_bicluster(K = None):
         plot_dat.columns.name = 'label'
         
     
-    elif MODE == 'ST':
+    elif MODE == 'ST' or MODE == 'baseline':
         X = np.asarray(np.matrix(batch_df)[:,0:n_tasks]).reshape(-1)
         order_x = np.asarray(np.argsort(X)).reshape(-1)
         fit_data = X[order_x].T
@@ -385,7 +385,7 @@ def update_database(attrname):
     # setup global parameters
     if MODE == 'RobustMT':
         N_TASK = task_df.shape[1] - 1
-    elif MODE == 'ST':
+    elif MODE == 'ST' or MODE == 'baseline':
         N_TASK = 1
 
     batch_info_columns = ['Label_id', 'size'] + list(batch_df.columns)[0:N_TASK] 
@@ -407,7 +407,7 @@ def update_database(attrname):
 
     if MODE == 'RobustMT':
         DEFAULT_TASKS = list(task_df.columns)
-    elif MODE == 'ST':
+    elif MODE == 'ST' or MODE == 'baseline':
         DEFAULT_TASKS = [DEFAULT_TICKERS[2]]
 
     select.options = DEFAULT_TICKERS
@@ -440,7 +440,7 @@ def update_database(attrname):
 
 ## setup visualization mode and data source
 file_prefix_input = TextInput(value='VISAR_webapp/data/RobustMT_Kinase_K12_', title='Prefix of the input data:')
-mode_select = Select(title='Mode of the model', value='RobustMT', options=['RobustMT', 'MT', 'ST'])
+mode_select = Select(title='Mode of the model', value='RobustMT', options=['RobustMT', 'MT', 'ST', 'baseline'])
 
 DATA_DIR = file_prefix_input.value
 compound_df = pd.read_csv(DATA_DIR + 'compound_df.csv', )
@@ -460,7 +460,7 @@ MODE = mode_select.value
 
 if MODE == 'RobustMT':
     N_TASK = task_df.shape[1] - 1
-elif MODE == 'ST':
+elif MODE == 'ST' or MODE == 'baseline':
     N_TASK = 1
 
 batch_info_columns = ['Label_id', 'size'] + list(batch_df.columns)[0:N_TASK] 
@@ -487,7 +487,7 @@ DEFAULT_CUSTOM_TICKERS = [x for x in custom_compound_df_columns
 
 if MODE == 'RobustMT':
     DEFAULT_TASKS = list(task_df.columns)
-elif MODE == 'ST':
+elif MODE == 'ST' or MODE == 'baseline':
     DEFAULT_TASKS = [DEFAULT_TICKERS[2]]
 
 #-----------------------------
@@ -546,4 +546,7 @@ layout = column(
 # initialize
 curdoc().add_root(layout)
 curdoc().title = "VISAR"
+
+
+# possible race condition: https://discourse.bokeh.org/t/possible-race-condition-when-replacing-figure-object/951/3
 

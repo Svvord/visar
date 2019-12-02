@@ -13,11 +13,11 @@ import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import AllChem, MACCSkeys
 
-from keras.layers import Dense, Input
-from keras.layers.core import Dropout
-from keras.models import Model
-from keras.optimizers import Adam
-from keras.callbacks import ModelCheckpoint
+from tensorflow.keras.layers import Dense, Input
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import ModelCheckpoint
 
 from sklearn import linear_model
 from sklearn.svm import LinearSVR
@@ -179,7 +179,7 @@ def extract_clean_dataset(subset_names, MT_df, add_features = None, id_field = '
     return extract_df
 
 #----------------------------------------------
-def model_builder(model_params, model_dir):
+def ST_model_builder(model_params, model_dir):
     model = dc.models.MultitaskRegressor(**model_params)
     return model
 
@@ -190,7 +190,7 @@ def ST_model(n_feature, layer_size, drop_prob,
     for i in range(1,len(layer_size)):
         X = Dropout(drop_prob)(X)
         X = Dense(layer_size[i], activation = 'relu')(X) 
-    model = Model(input = training_dat, output = X)
+    model = Model(training_dat, X)
     optimizer = Adam(lr=lr, beta_1=beta_1, beta_2=beta_2, epsilon=epsilon)
     model.compile(loss = 'mean_squared_error', optimizer = optimizer)
     return model
@@ -221,7 +221,7 @@ def ST_model_hyperparam_screen(fname, task_names, FP_type, params_dict, log_path
     
             print('Hyperprameter screening ...')
             metric = dc.metrics.Metric(dc.metrics.r2_score)
-            optimizer = dc.hyper.HyperparamOpt(model_builder)
+            optimizer = dc.hyper.HyperparamOpt(ST_model_builder)
             best_dnn, best_hyperparams, all_results = optimizer.hyperparam_search(params_dict,
                                                                       train_dataset,
                                                                       valid_dataset, [],
@@ -282,9 +282,9 @@ def ST_model_training(fname, FP_type, best_hyperparams, result_path, epoch_num =
                                           monitor='val_loss', verbose = 0, save_weights_only = False,
                                           mode = 'auto', period = 1)
                 if iteration % repo_num == 0:
-                    model.fit(train_dataset.X, train_dataset.y, nb_epoch=5, callbacks = [checkpoint_callback])
+                    model.fit(train_dataset.X, train_dataset.y, epochs=5, callbacks = [checkpoint_callback])
                 else:
-                    model.fit(train_dataset.X, train_dataset.y, nb_epoch=epoch_num, verbose=0)
+                    model.fit(train_dataset.X, train_dataset.y, epochs=epoch_num, verbose=0)
             
             print('Training baseline models ...')
             X_new = np.c_[[1]*train_dataset.X.shape[0], train_dataset.X]
@@ -338,6 +338,52 @@ def ST_model_training(fname, FP_type, best_hyperparams, result_path, epoch_num =
     return  output_df
 
 #----------------------------------------------
+def RobustMT_model_builder(model_params, model_dir):
+    model = dc.models.RobustMultitaskRegressor(**model_params)
+    return model
+
+def RobustMT_model_hyperparam_screen(fname, task_names, FP_type, params_dict, log_path = './logs/',
+                               smiles_field = 'salt_removed_smi', id_field='molregno'):
+    '''
+    hyperparameter screening using deepchem package
+    input: fname --- name of the file of raw data containing chemicals and the value for each assay;
+           task --- list of task names (supporting 1 or more, but must be a list)
+           FP_type --- name of the fingprint type (one of 'Circular_2048', 'Circular_1024', 'Morgan', 'MACCS', 'RDKit_FP')
+           params_dict --- dictionary containing the parameters along with the screening range
+           log_path --- the directory saving the log file
+    output: the log; log file saved in log_path
+    '''
+    log_output = []
+    print('----------------------------------------------')
+    dataset_file = '%s/temp.csv' % (log_path)
+    dataset, _ = prepare_dataset(fname, task_names, dataset_file, FP_type, 
+                                 smiles_field = smiles_field, 
+                                 add_features = None,
+                                 id_field = id_field, model_flag = 'MT')
+    for cnt in range(3):
+        print('Preparing dataset of rep %d...' % ((cnt + 1)))
+        splitter = dc.splits.RandomSplitter(dataset_file)
+        train_dataset, valid_dataset, test_dataset = splitter.train_valid_test_split(dataset)
+    
+        print('Hyperprameter screening ...')
+        metric = dc.metrics.Metric(dc.metrics.r2_score, np.mean)
+        optimizer = dc.hyper.HyperparamOpt(RobustMT_model_builder)
+        best_dnn, best_hyperparams, all_results = optimizer.hyperparam_search(params_dict,
+                                                                      train_dataset,
+                                                                      valid_dataset, [],
+                                                                      metric)
+        # get the layer size and dropout rate of all_results
+        for (key, value) in all_results.items():
+            log_output.append('rep%d\t%s\t%s' % (cnt, str(key), str(value)))
+    
+        print('Generate performace report ...')
+        with open('%s/hyperparam_log.txt' % (log_path), 'w') as f:
+            for line in log_output:
+                f.write("%s\n" % line)
+    os.system('rm %s' % dataset_file)
+    
+    return  log_output
+
 def RobustMT_model_training(MT_dat_name, FP_type, task_list, log_path, 
                             n_features, layer_sizes, bypass_layer_sizes, bypass_dropouts, dropout, lr,
                             N_test = 500.0, add_features = None, n_epoch = 40, epoch_num = 10,
@@ -394,4 +440,6 @@ def RobustMT_model_training(MT_dat_name, FP_type, task_list, log_path,
         train_df.to_csv(model.save_file + '_train_log.csv')
         test_df.to_csv(model.save_file + '_test_log.csv')
     return 
+
+#------------------------------------------------------------------
 
