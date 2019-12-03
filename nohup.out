@@ -1,0 +1,138 @@
+[W 09:33:48.248 NotebookApp] WARNING: The notebook server is listening on all IP addresses and not using encryption. This is not recommended.
+[I 09:33:48.248 NotebookApp] The port 6666 is already in use, trying another port.
+[I 09:33:48.249 NotebookApp] The port 6667 is already in use, trying another port.
+[I 09:33:48.253 NotebookApp] Serving notebooks from local directory: /home/housy17/Projects
+[I 09:33:48.253 NotebookApp] The Jupyter Notebook is running at:
+[I 09:33:48.253 NotebookApp] http://localhost.localdomain:6668/
+[I 09:33:48.253 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[W 09:34:02.801 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:02.802 NotebookApp] Couldn't authenticate WebSocket connection
+[W 09:34:02.803 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:02.823 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:02.980 NotebookApp] 403 GET /api/kernels/5d854948-6d32-43f3-ae5b-ddcb68f82528/channels?session_id=f73922b689c540ff8c8e5f9dc787be35 (::1) 184.30ms referer=None
+[W 09:34:02.981 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:02.981 NotebookApp] Couldn't authenticate WebSocket connection
+[W 09:34:02.981 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:02.982 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:02.984 NotebookApp] 403 GET /api/kernels/b6992544-b4a5-4110-8e86-b3853d5aaa4e/channels?session_id=3cdb7e7b32c7464881e5a5655c0895b2 (::1) 185.15ms referer=None
+[W 09:34:03.000 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:03.000 NotebookApp] Couldn't authenticate WebSocket connection
+[W 09:34:03.001 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:03.001 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:03.003 NotebookApp] 403 GET /api/kernels/df96232c-2e0e-4b62-b898-8fd145a525df/channels?session_id=11f5aeb37f8d41098190331df15fe667 (::1) 5.21ms referer=None
+[W 09:34:03.006 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:03.007 NotebookApp] Couldn't authenticate WebSocket connection
+[W 09:34:03.007 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:03.008 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:03.009 NotebookApp] 403 GET /api/kernels/9e85b993-50df-4a40-acbf-142947002fa5/channels?session_id=e41d7fc2361740b9879a11b75e1014c7 (::1) 5.40ms referer=None
+[W 09:34:03.021 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:03.021 NotebookApp] Couldn't authenticate WebSocket connection
+[W 09:34:03.022 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:03.022 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:03.024 NotebookApp] 403 GET /api/kernels/eacd9d2a-3918-4fae-a43e-c0b984b0c25e/channels?session_id=387f80029203497e863f44f88ca1be07 (::1) 4.73ms referer=None
+[W 09:34:03.359 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:03.359 NotebookApp] Couldn't authenticate WebSocket connection
+[W 09:34:03.359 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:03.360 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:03.362 NotebookApp] 403 GET /api/kernels/845dd3fc-06f6-4d97-9147-b79ffda9574b/channels?session_id=b9511da2ae52424e8b049949d462f40f (::1) 5.53ms referer=None
+[W 09:34:04.366 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:04.366 NotebookApp] Couldn't authenticate WebSocket connection
+[W 09:34:04.367 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:04.368 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:04.370 NotebookApp] 403 GET /api/kernels/ab4176d8-3197-4413-85c2-5f0b5cc9d514/channels?session_id=d39e70acab7f4c2689e50e159be35344 (::1) 6.67ms referer=None
+[W 09:34:05.383 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:05.385 NotebookApp] Couldn't authenticate WebSocket connection
+[W 09:34:05.386 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:05.388 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:05.391 NotebookApp] 403 GET /api/kernels/5d854948-6d32-43f3-ae5b-ddcb68f82528/channels?session_id=f73922b689c540ff8c8e5f9dc787be35 (::1) 21.65ms referer=None
+[W 09:34:05.413 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:05.413 NotebookApp] Couldn't authenticate WebSocket connection
+[W 09:34:05.413 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:05.414 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:05.415 NotebookApp] 403 GET /api/kernels/b6992544-b4a5-4110-8e86-b3853d5aaa4e/channels?session_id=3cdb7e7b32c7464881e5a5655c0895b2 (::1) 6.25ms referer=None
+[W 09:34:07.058 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:07.059 NotebookApp] Couldn't authenticate WebSocket connection
+[W 09:34:07.059 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:07.060 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:07.062 NotebookApp] 403 GET /api/kernels/df96232c-2e0e-4b62-b898-8fd145a525df/channels?session_id=11f5aeb37f8d41098190331df15fe667 (::1) 5.92ms referer=None
+[W 09:34:07.361 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:07.361 NotebookApp] Couldn't authenticate WebSocket connection
+[W 09:34:07.362 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:07.362 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:07.364 NotebookApp] 403 GET /api/kernels/eacd9d2a-3918-4fae-a43e-c0b984b0c25e/channels?session_id=387f80029203497e863f44f88ca1be07 (::1) 5.81ms referer=None
+[W 09:34:07.487 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:07.487 NotebookApp] Couldn't authenticate WebSocket connection
+[W 09:34:07.488 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:07.488 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:07.490 NotebookApp] 403 GET /api/kernels/9e85b993-50df-4a40-acbf-142947002fa5/channels?session_id=e41d7fc2361740b9879a11b75e1014c7 (::1) 5.86ms referer=None
+[W 09:34:08.360 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:08.360 NotebookApp] Couldn't authenticate WebSocket connection
+[W 09:34:08.361 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:08.362 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:08.363 NotebookApp] 403 GET /api/kernels/845dd3fc-06f6-4d97-9147-b79ffda9574b/channels?session_id=b9511da2ae52424e8b049949d462f40f (::1) 6.02ms referer=None
+[W 09:34:09.468 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:09.468 NotebookApp] Couldn't authenticate WebSocket connection
+[W 09:34:09.469 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:09.470 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:09.472 NotebookApp] 403 GET /api/kernels/ab4176d8-3197-4413-85c2-5f0b5cc9d514/channels?session_id=d39e70acab7f4c2689e50e159be35344 (::1) 6.34ms referer=None
+[W 09:34:10.837 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:10.837 NotebookApp] Couldn't authenticate WebSocket connection
+[W 09:34:10.838 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:10.838 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:10.840 NotebookApp] 403 GET /api/kernels/5d854948-6d32-43f3-ae5b-ddcb68f82528/channels?session_id=f73922b689c540ff8c8e5f9dc787be35 (::1) 5.72ms referer=None
+[W 09:34:11.249 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:11.249 NotebookApp] Couldn't authenticate WebSocket connection
+[W 09:34:11.250 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:11.251 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:11.252 NotebookApp] 403 GET /api/kernels/b6992544-b4a5-4110-8e86-b3853d5aaa4e/channels?session_id=3cdb7e7b32c7464881e5a5655c0895b2 (::1) 5.72ms referer=None
+[I 09:34:12.445 NotebookApp] 302 GET / (::1) 0.94ms
+[W 09:34:12.451 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[W 09:34:12.452 NotebookApp] Clearing invalid/expired login cookie username-localhost-1234
+[I 09:34:12.454 NotebookApp] 302 GET /tree? (::1) 3.52ms
+[I 09:34:15.868 NotebookApp] 302 POST /login?next=%2Ftree%3F (::1) 2.43ms
+[W 09:34:16.123 NotebookApp] 404 GET /api/kernels/df96232c-2e0e-4b62-b898-8fd145a525df/channels?session_id=11f5aeb37f8d41098190331df15fe667 (::1): Kernel does not exist: df96232c-2e0e-4b62-b898-8fd145a525df
+[W 09:34:16.139 NotebookApp] 404 GET /api/kernels/df96232c-2e0e-4b62-b898-8fd145a525df/channels?session_id=11f5aeb37f8d41098190331df15fe667 (::1) 43.84ms referer=None
+[W 09:34:16.372 NotebookApp] 404 GET /api/kernels/eacd9d2a-3918-4fae-a43e-c0b984b0c25e/channels?session_id=387f80029203497e863f44f88ca1be07 (::1): Kernel does not exist: eacd9d2a-3918-4fae-a43e-c0b984b0c25e
+[W 09:34:16.373 NotebookApp] 404 GET /api/kernels/eacd9d2a-3918-4fae-a43e-c0b984b0c25e/channels?session_id=387f80029203497e863f44f88ca1be07 (::1) 4.36ms referer=None
+[W 09:34:17.370 NotebookApp] 404 GET /api/kernels/845dd3fc-06f6-4d97-9147-b79ffda9574b/channels?session_id=b9511da2ae52424e8b049949d462f40f (::1): Kernel does not exist: 845dd3fc-06f6-4d97-9147-b79ffda9574b
+[W 09:34:17.372 NotebookApp] 404 GET /api/kernels/845dd3fc-06f6-4d97-9147-b79ffda9574b/channels?session_id=b9511da2ae52424e8b049949d462f40f (::1) 4.92ms referer=None
+[W 09:34:20.640 NotebookApp] 404 GET /api/kernels/9e85b993-50df-4a40-acbf-142947002fa5/channels?session_id=e41d7fc2361740b9879a11b75e1014c7 (::1): Kernel does not exist: 9e85b993-50df-4a40-acbf-142947002fa5
+[W 09:34:20.642 NotebookApp] 404 GET /api/kernels/9e85b993-50df-4a40-acbf-142947002fa5/channels?session_id=e41d7fc2361740b9879a11b75e1014c7 (::1) 4.92ms referer=None
+[W 09:34:21.797 NotebookApp] 404 GET /api/kernels/b6992544-b4a5-4110-8e86-b3853d5aaa4e/channels?session_id=3cdb7e7b32c7464881e5a5655c0895b2 (::1): Kernel does not exist: b6992544-b4a5-4110-8e86-b3853d5aaa4e
+[W 09:34:21.798 NotebookApp] 404 GET /api/kernels/b6992544-b4a5-4110-8e86-b3853d5aaa4e/channels?session_id=3cdb7e7b32c7464881e5a5655c0895b2 (::1) 4.87ms referer=None
+[W 09:34:22.473 NotebookApp] 404 GET /api/kernels/5d854948-6d32-43f3-ae5b-ddcb68f82528/channels?session_id=f73922b689c540ff8c8e5f9dc787be35 (::1): Kernel does not exist: 5d854948-6d32-43f3-ae5b-ddcb68f82528
+[W 09:34:22.475 NotebookApp] 404 GET /api/kernels/5d854948-6d32-43f3-ae5b-ddcb68f82528/channels?session_id=f73922b689c540ff8c8e5f9dc787be35 (::1) 4.87ms referer=None
+[W 09:34:22.705 NotebookApp] 404 GET /api/kernels/ab4176d8-3197-4413-85c2-5f0b5cc9d514/channels?session_id=d39e70acab7f4c2689e50e159be35344 (::1): Kernel does not exist: ab4176d8-3197-4413-85c2-5f0b5cc9d514
+[W 09:34:22.706 NotebookApp] 404 GET /api/kernels/ab4176d8-3197-4413-85c2-5f0b5cc9d514/channels?session_id=d39e70acab7f4c2689e50e159be35344 (::1) 4.90ms referer=None
+[I 09:34:30.276 NotebookApp] Kernel started: c461b807-8723-485f-a23c-911a8b4c2575
+[W 09:34:33.387 NotebookApp] Replacing stale connection: eacd9d2a-3918-4fae-a43e-c0b984b0c25e:387f80029203497e863f44f88ca1be07
+[W 09:34:34.701 NotebookApp] Replacing stale connection: 845dd3fc-06f6-4d97-9147-b79ffda9574b:b9511da2ae52424e8b049949d462f40f
+2019-12-03 09:35:17.372415: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 FMA
+2019-12-03 09:35:17.769064: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1432] Found device 0 with properties: 
+name: GeForce GTX 1080 Ti major: 6 minor: 1 memoryClockRate(GHz): 1.582
+pciBusID: 0000:02:00.0
+totalMemory: 10.92GiB freeMemory: 4.09GiB
+2019-12-03 09:35:17.769153: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1511] Adding visible gpu devices: 0
+2019-12-03 09:35:21.815290: I tensorflow/core/common_runtime/gpu/gpu_device.cc:982] Device interconnect StreamExecutor with strength 1 edge matrix:
+2019-12-03 09:35:21.815405: I tensorflow/core/common_runtime/gpu/gpu_device.cc:988]      0 
+2019-12-03 09:35:21.815430: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1001] 0:   N 
+2019-12-03 09:35:21.815835: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1115] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:0 with 3820 MB memory) -> physical GPU (device: 0, name: GeForce GTX 1080 Ti, pci bus id: 0000:02:00.0, compute capability: 6.1)
+2019-12-03 09:35:31.882205: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1511] Adding visible gpu devices: 0
+2019-12-03 09:35:31.882277: I tensorflow/core/common_runtime/gpu/gpu_device.cc:982] Device interconnect StreamExecutor with strength 1 edge matrix:
+2019-12-03 09:35:31.882307: I tensorflow/core/common_runtime/gpu/gpu_device.cc:988]      0 
+2019-12-03 09:35:31.882315: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1001] 0:   N 
+2019-12-03 09:35:31.882451: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1115] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:0 with 3820 MB memory) -> physical GPU (device: 0, name: GeForce GTX 1080 Ti, pci bus id: 0000:02:00.0, compute capability: 6.1)
+2019-12-03 09:35:40.733701: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1511] Adding visible gpu devices: 0
+2019-12-03 09:35:40.733763: I tensorflow/core/common_runtime/gpu/gpu_device.cc:982] Device interconnect StreamExecutor with strength 1 edge matrix:
+2019-12-03 09:35:40.733774: I tensorflow/core/common_runtime/gpu/gpu_device.cc:988]      0 
+2019-12-03 09:35:40.733781: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1001] 0:   N 
+2019-12-03 09:35:40.733907: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1115] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:0 with 3820 MB memory) -> physical GPU (device: 0, name: GeForce GTX 1080 Ti, pci bus id: 0000:02:00.0, compute capability: 6.1)
+2019-12-03 09:35:49.735766: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1511] Adding visible gpu devices: 0
+2019-12-03 09:35:49.735837: I tensorflow/core/common_runtime/gpu/gpu_device.cc:982] Device interconnect StreamExecutor with strength 1 edge matrix:
+2019-12-03 09:35:49.735850: I tensorflow/core/common_runtime/gpu/gpu_device.cc:988]      0 
+2019-12-03 09:35:49.735858: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1001] 0:   N 
+2019-12-03 09:35:49.735986: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1115] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:0 with 3820 MB memory) -> physical GPU (device: 0, name: GeForce GTX 1080 Ti, pci bus id: 0000:02:00.0, compute capability: 6.1)
+[I 09:35:54.944 NotebookApp] Kernel interrupted: c461b807-8723-485f-a23c-911a8b4c2575
+[I 09:36:01.704 NotebookApp] Shutting down on /api/shutdown request.
+[I 09:36:01.707 NotebookApp] Shutting down 1 kernel
+[I 09:36:06.949 NotebookApp] Kernel shutdown: c461b807-8723-485f-a23c-911a8b4c2575
