@@ -1,7 +1,0 @@
-numpy
-scipy
-scikit-learn
-pandas
-deepchem
-cairosvg
-bokeh
