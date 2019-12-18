@@ -90,8 +90,10 @@ def update_bicluster(K = None):
         n_tasks = 1
     elif MODE == 'MT':
         n_tasks = task_df.shape[1]
+    elif MODE == 'AttentiveFP':
+        n_tasks = sum([item[0:4] == 'avg_' for item in batch_df.columns.values])
     
-    if MODE == 'RobustMT':
+    if MODE == 'RobustMT' or MODE == 'AttentiveFP':
         # cocluster of the minibatch predictive matrix
         X = preprocessing.scale(np.matrix(batch_df)[:,0:n_tasks])
         cocluster = SpectralCoclustering(n_clusters=K, random_state=0)
@@ -116,14 +118,17 @@ def update_bicluster(K = None):
     compound_df['label_color'] = c
 
     #--------- generate heatmap dataframe -------
-    if MODE == 'RobustMT':
+    if MODE == 'RobustMT' or MODE == 'AttentiveFP':
         X = preprocessing.scale(np.matrix(batch_df)[:,0:n_tasks])
         fit_data = X[np.argsort(cocluster.row_labels_)]
         fit_data = fit_data[:, np.argsort(cocluster.column_labels_)].T
         [min_value, max_value] = [fit_data.min().min(), fit_data.max().max()]
     
         # prepare dataframe structure for bokeh plot 
-        rows = task_df.columns[0:-1]
+        if MODE == 'RobustMT':
+            rows = task_df.columns[0:-1]
+        else:
+            rows = [item[4:] for item in batch_df.columns.values if item[0:4] == 'avg_']
         rows_new = [rows[idx] for idx in np.argsort(cocluster.column_labels_)]
         cols = batch_df['Label_id'].tolist()
         cols_new = [str(cols[idx]) for idx in np.argsort(cocluster.row_labels_)]
@@ -133,7 +138,7 @@ def update_bicluster(K = None):
         plot_dat = plot_dat.set_index('task')
         plot_dat.columns = cols_new
         plot_dat.columns.name = 'label'
-        
+
     
     elif MODE == 'ST' or MODE == 'baseline':
         X = np.asarray(np.matrix(batch_df)[:,0:n_tasks]).reshape(-1)
@@ -387,6 +392,8 @@ def update_database(attrname):
         N_TASK = task_df.shape[1] - 1
     elif MODE == 'ST' or MODE == 'baseline':
         N_TASK = 1
+    elif MODE == 'AttentiveFP':
+        N_TASK = sum([item[0:4] == 'avg_' for item in batch_df.columns.values])
 
     batch_info_columns = ['Label_id', 'size'] + list(batch_df.columns)[0:N_TASK] 
     compound_df_columns = list(compound_df.columns)
@@ -409,6 +416,8 @@ def update_database(attrname):
         DEFAULT_TASKS = list(task_df.columns)
     elif MODE == 'ST' or MODE == 'baseline':
         DEFAULT_TASKS = [DEFAULT_TICKERS[2]]
+    elif MODE == 'AttentiveFP':
+        DEFAULT_TASKS = ['SHARE']
 
     select.options = DEFAULT_TICKERS
     select.value = 'batch_label'
@@ -439,8 +448,9 @@ def update_database(attrname):
 
 
 ## setup visualization mode and data source
-file_prefix_input = TextInput(value='VISAR_webapp/data/ST_T107_rep0_new_', title='Prefix of the input data:')
-mode_select = Select(title='Mode of the model', value='ST', options=['RobustMT', 'MT', 'ST', 'baseline'])
+file_prefix_input = TextInput(value='VISAR_webapp/data/RobustMT_Kinase_K12_', title='Prefix of the input data:')
+mode_select = Select(title='Mode of the model', value='RobustMT', 
+                     options=['RobustMT', 'MT', 'ST', 'baseline', 'AttentiveFP'])
 
 DATA_DIR = file_prefix_input.value
 compound_df = pd.read_csv(DATA_DIR + 'compound_df.csv', )
@@ -462,6 +472,8 @@ if MODE == 'RobustMT':
     N_TASK = task_df.shape[1] - 1
 elif MODE == 'ST' or MODE == 'baseline':
     N_TASK = 1
+elif MODE == 'AttentiveFP':
+    N_TASK = sum([item[0:4] == 'avg_' for item in batch_df.columns.values])
 
 batch_info_columns = ['Label_id', 'size'] + list(batch_df.columns)[0:N_TASK] 
 
@@ -489,6 +501,8 @@ if MODE == 'RobustMT':
     DEFAULT_TASKS = list(task_df.columns)
 elif MODE == 'ST' or MODE == 'baseline':
     DEFAULT_TASKS = [DEFAULT_TICKERS[2]]
+elif MODE == 'AttentiveFP':
+    DEFAULT_TASKS = ['SHARE']
 
 #-----------------------------
 ## set up widgets

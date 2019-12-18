@@ -74,17 +74,26 @@ def plot_SAR(compound_df, task_df, chem_idx, task_id, SAR_cnt,
              n_features = 2048):
     smiles = compound_df['canonical_smiles'].iloc[chem_idx]
 
+    grad_flag = True
     if mode == 'RobustMT':
         grad = task_df[task_id].tolist()
     elif mode == 'ST':
         grad = task_df.iloc[chem_idx].tolist()
     elif mode == 'baseline':
         grad = task_df[task_id].tolist()
+    elif mode == 'AttentiveFP':
+        values =  np.array(task_df.iloc[chem_idx].tolist())
+        atomsToUse = np.array([item for item in values if ~(item == 0.0)])
+        grad_flag = False
 
     #grad = preprocessing.scale(np.array(grad).reshape(-1))
     #print(grad.shape)
 
-    mol, highlit_pos, highlit_neg, atomsToUse = gradient2atom(smiles, grad)
+    if grad_flag:
+        mol, highlit_pos, highlit_neg, atomsToUse = gradient2atom(smiles, grad)
+    else:
+        mol = Chem.MolFromSmiles(smiles)
+
     cutoff = np.ceil(np.max(np.array([np.absolute(np.min(atomsToUse)), np.max(atomsToUse)])))
     clip = np.mean(atomsToUse)
     #print(cutoff, clip)
